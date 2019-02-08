@@ -616,7 +616,7 @@ namespace vJoySerialFeeder
         
         void ManualMenuClick(object sender, EventArgs e)
         {
-        	System.Diagnostics.Process.Start("https://github.com/Cleric-K/vJoySerialFeeder/blob/master/Docs/MANUAL.md");
+        	System.Diagnostics.Process.Start("https://github.com/Cleric-K/vJoySerialFeeder/blob/master/Docs/README.md");
         }
         
         void MenuStrip1MenuActivate(object sender, EventArgs e)
