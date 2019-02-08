@@ -7,7 +7,7 @@ A fork of [vJoySerialFeeder](https://github.com/Cleric-K/vJoySerialFeeder) for f
 * [uinput](https://www.kernel.org/doc/html/v4.12/input/uinput.html) (Linux). [How-to](Docs/Linux.md).
 
 Serial port data protocols currently supported:
-* IBUS - used by FlySky radio controllers.
+* [IBUS](https://github.com/qba667/MAVLinkToIbus/blob/master/MAVLinkToIBUS/IBUSTelemetry.h) - used by FlySky radio controllers.
 * SBUS - used by FrSky, Futaba radio controllers.
 * MultiWii Serial Protocol - used by RC Flight Controllers running MultiWii, CleanFlight, BetaFlight, iNav, etc.
 * KISS serial protocol - used by KISS RC Flight Controllers.
@@ -20,10 +20,12 @@ Received data can be _mapped_ to any virtual joystick axis or button in very fle
 ## Use cases ##
 1. Use Arduino to read data from _any_ device and send it to your PC - basic sketch in the [Arduino](Arduino/Joystick) directory.  
    See [example](Docs/Arduino.md) on using old RC controller for simulators.
-2. Read RC controller (FlySky) directly from any IBUS capable receiver. [How-to](Docs/FlySky.md).
+2. Read RC controller (FlySky) directly from any [IBUS](https://github.com/betaflight/betaflight/wiki/Single-wire-FlySky-(IBus)-telemetry) capable receiver. [How-to](Docs/FlySky.md).
 3. Read RC controller (FrSky, Futaba, etc.) directly from any SBUS receiver. [How-to](Docs/Sbus.md).
-4. Use MultiWii compatible Flight Controller (MultiWii, CleanFlight, BetaFlight, etc.). You can use your actual RC model. [How-to](Docs/MultiWii.md).
-5. Use KISS Flight Controller. You can use your actual RC model. It is pretty much the same as MultiWii, only you have to select `KISS` for protocol.
+4. Use [MultiWii](http://www.multiwii.com/wiki/) compatible Flight Controller (MultiWii, CleanFlight, BetaFlight, etc.).  
+   You can use your actual RC model. [How-to](Docs/MultiWii.md).
+5. Use KISS Flight Controller. You can use your actual RC model.  
+   It is pretty much the same as MultiWii, except using [KISS](https://kiss.flyduino.net/knowledge-base-category/kiss-fc-kb/) protocol.
 6. Use as _general_ virtual joystick feeder. Although the program has the word "Serial" in its name,  
    it is not strictly necessary to feed the virtual joystick from the serial port.  
    You can _interact_ with vJoySerialFeeder in different ways and feed your own data to the virtual joystick   
