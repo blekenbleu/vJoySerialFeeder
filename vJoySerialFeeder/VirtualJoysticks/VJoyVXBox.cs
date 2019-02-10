@@ -96,14 +96,14 @@ namespace vJoySerialFeeder
 		delegate bool ButtonSetter(uint idx, bool val);
 		
 		// helpers to find the function calls by index
-		static AxisSetter[] axisSetters = new AxisSetter[] {
+		static readonly AxisSetter[] axisSetters = new AxisSetter[] {
 			SetAxisX, SetAxisY,
 			(idx, val) => SetTriggerL(idx, (byte)val), // trigger has to cast to byte
 			SetAxisRx, SetAxisRy,
 			(idx, val) => SetTriggerR(idx, (byte)val) // trigger has to cast to byte
 		};
 		
-		static ButtonSetter[] buttonSetters = new ButtonSetter[] {
+		static readonly ButtonSetter[] buttonSetters = new ButtonSetter[] {
 			SetBtnA, SetBtnB, SetBtnX, SetBtnY,
 			SetBtnLB, SetBtnRB,
 			SetBtnBack, SetBtnStart,

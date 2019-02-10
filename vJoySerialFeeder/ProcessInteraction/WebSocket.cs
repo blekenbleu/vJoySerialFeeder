@@ -74,7 +74,7 @@ namespace vJoySerialFeeder
 
 		
 		TcpListener listener;
-		byte[] sendBuf = new byte[256];
+        readonly byte[] sendBuf = new byte[256];
 		Dictionary<Socket, List<Subscription>> subscriptions = new Dictionary<Socket, List<WebSocket.Subscription>>();
 		List<Socket> deadSockets = new List<Socket>();
 		bool started;
@@ -83,7 +83,7 @@ namespace vJoySerialFeeder
 			Port = port;
 			listener = new TcpListener(IPAddress.Any, port);
 			listener.Start();
-			listener.BeginAcceptSocket(acceptConnection, null);
+			listener.BeginAcceptSocket(AcceptConnection, null);
 			
 			started = true;
 		}
@@ -96,7 +96,7 @@ namespace vJoySerialFeeder
 			started = false;
 		}
 	
-		void acceptConnection(IAsyncResult ar) {
+		void AcceptConnection(IAsyncResult ar) {
 			// accept another
 			Socket sock = null;
 			
@@ -105,15 +105,15 @@ namespace vJoySerialFeeder
 				sock = listener.EndAcceptSocket(ar);
                 sock.Blocking = true;
 				
-				listener.BeginAcceptSocket(acceptConnection, null);
+				listener.BeginAcceptSocket(AcceptConnection, null);
 				
-				if(negotiate(sock))
-					receiveLoop(sock);
+				if(Negotiate(sock))
+					ReceiveLoop(sock);
 			}
 			catch(Exception e) {
 				System.Diagnostics.Debug.WriteLine(e.Message);
 				if(sock != null) {
-					removeSubscriptionsForSocket(sock);
+					RemoveSubscriptionsForSocket(sock);
 					try {
 						sock.Close();
 					}
@@ -127,7 +127,7 @@ namespace vJoySerialFeeder
 		/// Perform minimal WebSocket negotiation
 		/// </summary>
 		/// <param name="sock"></param>
-		bool negotiate(Socket sock) {
+		bool Negotiate(Socket sock) {
 			string sec = null;
             bool ok = false;
             NetworkStream ns = null;
@@ -180,7 +180,7 @@ namespace vJoySerialFeeder
 		/// the data as websocket frames.
 		/// </summary>
 		/// <param name="sock"></param>
-		void receiveLoop(Socket sock) {
+		void ReceiveLoop(Socket sock) {
 			var buf = new byte[256];
 			sock.ReceiveTimeout = 1000;
 			
@@ -215,7 +215,7 @@ namespace vJoySerialFeeder
 	        		switch(opcode) {
 	        			case OP_TEXT:
 	    					var msg = Encoding.UTF8.GetString(buf, 4, len);
-	    					onMessage(sock, msg);
+	    					OnMessage(sock, msg);
 	        				
 							break;
 							
@@ -280,7 +280,7 @@ namespace vJoySerialFeeder
 						
 						if(sub.Update(m.Input, m.Output)) {
 							try {
-								sendMappingData(sock, sub.mappingIndex+1, m);
+								SendMappingData(sock, sub.mappingIndex+1, m);
 							}
 							catch(Exception e) {
 								System.Diagnostics.Debug.WriteLine(e.Message);
@@ -293,7 +293,7 @@ namespace vJoySerialFeeder
 				
 				if(deadSockets.Count > 0) {
 					foreach(var sock in deadSockets)
-						removeSubscriptionsForSocket(sock);
+						RemoveSubscriptionsForSocket(sock);
 					
 					deadSockets.Clear();
 				}
@@ -309,7 +309,7 @@ namespace vJoySerialFeeder
 		/// </summary>
 		/// <param name="sock"></param>
 		/// <param name="msg"></param>
-		void onMessage(Socket sock, string msg) {
+		void OnMessage(Socket sock, string msg) {
 			try {
 				var parts = msg.ToLower().Split(null);
 				
@@ -323,11 +323,11 @@ namespace vJoySerialFeeder
 						// requests json message with the values of mapping MAPPING_ID
 						// all MAPPING_IDs start from 1
 						
-						assertPartsNum(parts, 2);
-						var idx = parseInt(parts, 1);
-						var m = getMapping(idx);
+						AssertPartsNum(parts, 2);
+						var idx = ParseInt(parts, 1);
+						var m = GetMapping(idx);
 						
-						sendMappingData(sock, idx, m);
+						SendMappingData(sock, idx, m);
 						
 						break;
 						
@@ -338,16 +338,16 @@ namespace vJoySerialFeeder
 						// If you are setting the Input, the Output of the mapping will
 						// be updated automatically.
 						
-						assertPartsNum(parts, 4);
-						idx = parseInt(parts, 2);
-						m = getMapping(idx);
+						AssertPartsNum(parts, 4);
+						idx = ParseInt(parts, 2);
+						m = GetMapping(idx);
 						
 						switch(parts[1]) {
 							case "input":
-								m.Input = parseInt(parts, 3);
+								m.Input = ParseInt(parts, 3);
 								break;
 							case "output":
-								m.Output = parseFloat(parts, 3);
+								m.Output = ParseFloat(parts, 3);
 								break;
 							default:
 								throw new Exception("Expected 'input' or 'output' after 'set' command");
@@ -364,19 +364,19 @@ namespace vJoySerialFeeder
 						// Subscriptions cause messages to be received upon changes, which 
 						// have the same format as the ones received from the `get` command
 						
-						assertPartsNum(parts, 3);
-						idx = parseInt(parts, 2);
-						m = getMapping(idx);
+						AssertPartsNum(parts, 3);
+						idx = ParseInt(parts, 2);
+						m = GetMapping(idx);
 						
 						switch(parts[1]) {
 			            	case "input":
-								subscribe(sock, SubscriptionTypes.Input, idx);
+								Subscribe(sock, SubscriptionTypes.Input, idx);
 								break;
 							case "output":
-								subscribe(sock, SubscriptionTypes.Output, idx);
+								Subscribe(sock, SubscriptionTypes.Output, idx);
 								break;
 							case "both":
-								subscribe(sock, SubscriptionTypes.Both, idx);
+								Subscribe(sock, SubscriptionTypes.Both, idx);
 								break;
 						    default:
 								throw new Exception("Expected 'input', 'output' or 'both' after 'set' command");
@@ -389,9 +389,9 @@ namespace vJoySerialFeeder
 						//
 						// unsubscribes to any changes of mapping MAPPING_ID
 						
-						assertPartsNum(parts, 2);
-						idx = parseInt(parts, 1);
-						unsubscribe(sock, idx);
+						AssertPartsNum(parts, 2);
+						idx = ParseInt(parts, 1);
+						Unsubscribe(sock, idx);
 						break;
 						
 					default:
@@ -400,30 +400,28 @@ namespace vJoySerialFeeder
 				}
 			}
 			catch(Exception e) {
-				sendError(sock, e.Message);
+				SendError(sock, e.Message);
 			}
 		}
 		
-		void assertPartsNum(string[] parts, int n) {
+		void AssertPartsNum(string[] parts, int n) {
 			if(parts.Length != n)
 				throw new Exception("Incorrect number of arguments");
 		}
 		
-		int parseInt(string[] parts, int idx) {
-			int i;
-			if(!int.TryParse(parts[idx], out i))
-				throw new Exception("Bad number supplied for argument " + (idx+2));
-			return i;
+		int ParseInt(string[] parts, int idx) {
+            if (!int.TryParse(parts[idx], out int i))
+                throw new Exception("Bad number supplied for argument " + (idx + 2));
+            return i;
 		}
 		
-		float parseFloat(string[] parts, int idx) {
-			float f;
-			if(!float.TryParse(parts[idx], NumberStyles.Float, CultureInfo.InvariantCulture, out f))
-				throw new Exception("Bad number supplied for argument " + (idx+2));
-			return f;
+		float ParseFloat(string[] parts, int idx) {
+            if (!float.TryParse(parts[idx], NumberStyles.Float, CultureInfo.InvariantCulture, out float f))
+                throw new Exception("Bad number supplied for argument " + (idx + 2));
+            return f;
 		}
 		
-		Mapping getMapping(int idx) {
+		Mapping GetMapping(int idx) {
 			var m = MainForm.Instance.MappingAt(idx - 1);
 			if(m == null)
 				throw new Exception("There is no mapping "+idx);
@@ -431,17 +429,17 @@ namespace vJoySerialFeeder
 		}
 
 		
-		void sendError(Socket sock, String msg) {
-			sendMessage(sock, "{\"error\":\""+msg.Replace("\"", "\\\"")+"\"}");
+		void SendError(Socket sock, String msg) {
+			SendMessage(sock, "{\"error\":\""+msg.Replace("\"", "\\\"")+"\"}");
 		}
 		
-		void sendMappingData(Socket sock, int mi, Mapping m) {
-			sendMessage(sock, "{\"mapping\":"+mi+",\"input\":"+m.Input
+		void SendMappingData(Socket sock, int mi, Mapping m) {
+			SendMessage(sock, "{\"mapping\":"+mi+",\"input\":"+m.Input
 			            +(MainForm.Instance.Failsafe ? ",\"failsafe\":true" : "")
 			            +",\"output\":"+m.Output.ToString(CultureInfo.InvariantCulture)+"}");
 		}
 		
-		void sendMessage(Socket sock, string msg) {;
+		void SendMessage(Socket sock, string msg) {;
 			lock(sendBuf) {
 				var slen = Encoding.UTF8.GetBytes(msg, 0, msg.Length, sendBuf, 2);
 				sendBuf[0] = 0x81;
@@ -450,14 +448,14 @@ namespace vJoySerialFeeder
 			}
 		}
 		
-		void removeSubscriptionsForSocket(Socket sock) {
+		void RemoveSubscriptionsForSocket(Socket sock) {
 			lock(subscriptions) {
 				if(subscriptions.ContainsKey(sock))
 				   subscriptions.Remove(sock);
 			}
 		}
 		
-		void subscribe(Socket sock, SubscriptionTypes type, int mIdx){
+		void Subscribe(Socket sock, SubscriptionTypes type, int mIdx){
 			mIdx--; // to zero-based index
 			
 			lock(subscriptions) {
@@ -484,7 +482,7 @@ namespace vJoySerialFeeder
 		               	
 		}
 		
-		void unsubscribe(Socket sock, int mIdx) {
+		void Unsubscribe(Socket sock, int mIdx) {
 			mIdx--; // to zero-based index
 			
 			lock(subscriptions) {
