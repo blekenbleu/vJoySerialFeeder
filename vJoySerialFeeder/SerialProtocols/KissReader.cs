@@ -163,7 +163,7 @@ namespace vJoySerialFeeder
 				// if timeout occurs we better send another request asap
 				Buffer.Clear();
 				lastSuccessfulRead = 0;
-				throw ex;
+				throw;
 			}
 		}
 		
@@ -192,7 +192,7 @@ namespace vJoySerialFeeder
 				d.ShowDialog();
 				if(d.DialogResult == DialogResult.OK) {
 					updateRate = d.UpdateRate;
-					return buildConfig();
+					return BuildConfig();
 				}
 				return null;
 			}
@@ -212,7 +212,7 @@ namespace vJoySerialFeeder
 			}
 		}
 		
-		private string buildConfig() {
+		private string BuildConfig() {
 			return updateRate.ToString();
 		}
 		

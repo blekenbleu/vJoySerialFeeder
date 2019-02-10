@@ -33,6 +33,7 @@ namespace vJoySerialFeeder
 		/// <summary>
 		/// Any errors should be thrown with this exception
 		/// </summary>
+        [Serializable]
 		public class VJoyException : Exception {
 			public VJoyException(string msg) : base(msg) { }
 		}

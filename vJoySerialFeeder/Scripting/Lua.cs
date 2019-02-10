@@ -50,9 +50,8 @@ namespace vJoySerialFeeder
 				vjoy.SetButton(button - 1, value > 0);
 			}
 		}
-		
-		
-		string scriptSource;
+
+        readonly string scriptSource;
 		Script script;
 		bool initted;
 		Closure update;
@@ -113,7 +112,7 @@ namespace vJoySerialFeeder
 				initted = true;
 			}
 			catch(InterpreterException ex) {
-				throw ex;
+				throw;
 			}
 		}
 		
@@ -129,12 +128,12 @@ namespace vJoySerialFeeder
 				}
 				catch(InterpreterException ex) {
 					update = null;
-					throw ex;
+					throw;
 				}
 			}
 		}
 		
-		private Mapping mapping(int index) {
+		private Mapping Mapping(int index) {
 			return MainForm.Instance.MappingAt(index - 1);
 		}
 		

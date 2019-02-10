@@ -20,6 +20,7 @@ namespace vJoySerialFeeder
 		/// throw this exception to let the caller know that it is not some
 		/// other serial read problem.
 		/// </summary>
+        [Serializable]
 		public class FailsafeException : Exception {
 			public FailsafeException(string msg) : base(msg) {}
 		}
@@ -42,7 +43,7 @@ namespace vJoySerialFeeder
 					if(index >= buf.Length) {
 						// this shouldn't really ever happen, but just to be sure
 						index = length = 0;
-						throw new IndexOutOfRangeException("Buffer overrun");
+						throw new InvalidOperationException("Buffer overrun");
 					}
 					
 					while(index >= length) {
@@ -233,7 +234,8 @@ namespace vJoySerialFeeder
         internal class Linux
         {
             [StructLayout(LayoutKind.Sequential)]
-            internal struct Termios2 {
+            internal struct Termios2
+            {
                 internal uint c_iflag;       /* input mode flags */
                 internal uint c_oflag;       /* output mode flags */
                 internal uint c_cflag;       /* control mode flags */
@@ -244,7 +246,10 @@ namespace vJoySerialFeeder
                 internal int c_ispeed;       /* input speed */
                 internal int c_ospeed;       /* output speed */
             }
+        }
 
+        internal static class NativeMethods
+        {
             [DllImport("libc")]
             internal static extern int open([MarshalAs(UnmanagedType.LPStr)]string path, uint flag);
 
@@ -252,22 +257,20 @@ namespace vJoySerialFeeder
             internal static extern int close(int handle);
 
             [DllImport("libc")]
-            internal static extern int ioctl(int handle, uint request, ref Termios2 termios2);
-
-
+            internal static extern int ioctl(int handle, uint request, ref Linux.Termios2 termios2);
         }
 
         bool SetLinuxCustomBaudRate(string port, int baud) {
             // based on code from https://gist.github.com/lategoodbye/f2d76134aa6c404cd92c
 
-            int fd = Linux.open(port, 0 /*O_RDONLY*/);
+            int fd = NativeMethods.open(port, 0 /*O_RDONLY*/);
             if (fd < 0) return false;
 
             try
             {
                 Linux.Termios2 t2 = new Linux.Termios2();
 
-                int e = Linux.ioctl(fd, 2150388778 /*TCGETS2*/, ref t2);
+                int e = NativeMethods.ioctl(fd, 2150388778 /*TCGETS2*/, ref t2);
                 if (e < 0) return false;
 
                 t2.c_cflag &= ~(uint)4111 /*CBAUD*/;
@@ -275,17 +278,17 @@ namespace vJoySerialFeeder
                 t2.c_ispeed = baud;
                 t2.c_ospeed = baud;
 
-                e = Linux.ioctl(fd, 1076646955 /*TCSETS2*/, ref t2);
+                e = NativeMethods.ioctl(fd, 1076646955 /*TCSETS2*/, ref t2);
                 if (e < 0) return false;
 
-                e = Linux.ioctl(fd, 2150388778 /*TCGETS2*/, ref t2);
+                e = NativeMethods.ioctl(fd, 2150388778 /*TCGETS2*/, ref t2);
                 if (e < 0) return false;
 
                 return true;
             }
             finally
             {
-                Linux.close(fd);
+                NativeMethods.close(fd);
             }
         }
 	}
