@@ -445,7 +445,7 @@ namespace vJoySerialFeeder
         #endregion
     }
 
-        internal static class NativeMethods
+        internal static partial class NativeMethods
         {
 
             [DllImport("ole32.dll")]

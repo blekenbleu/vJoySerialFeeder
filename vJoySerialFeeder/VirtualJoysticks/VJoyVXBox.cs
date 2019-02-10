@@ -145,7 +145,7 @@ namespace vJoySerialFeeder
         }
     }
 
-    internal static class NativeMethods
+    internal static partial class NativeMethods
     {
         #region vXboxInterface.dll functions
         // control functions
