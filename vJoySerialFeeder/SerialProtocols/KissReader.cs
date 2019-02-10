@@ -44,7 +44,7 @@ namespace vJoySerialFeeder
 		
 		public override void Start()
 		{
-			parseConfig(config);
+			ParseConfig(config);
 			
 			serialPort.ReadTimeout = 500;
 			serialPort.WriteTimeout = 500;
@@ -130,11 +130,11 @@ namespace vJoySerialFeeder
 						// first channel is throttle in range [0; 1000]
 						// https://github.com/flyduino/kissfc-chrome-gui/blob/83eb07baecfb906da1ac7fe83420eae4b9356293/js/protocol.js#L225
 						var bi = OFFSET_TELEMETRY_CH1;
-						channelData[ch++] = 1000 + getInt16(ref bi);
+						channelData[ch++] = 1000 + GetInt16(ref bi);
 						
 						// the remaining 7 channels are in range [-1000; 1000]
 						for(var i = 0; i < 7; i++) {
-							channelData[ch++] = 1500 + getInt16(ref bi)/2;
+							channelData[ch++] = 1500 + GetInt16(ref bi)/2;
 						}
 						
 						// if version is > 110, there are three additional channels
@@ -142,7 +142,7 @@ namespace vJoySerialFeeder
 						if(protocolVersion > 110) {
 							bi = OFFSET_TELEMETRY_CH9;
 							for(var i = 0; i < 3; i++) {
-								channelData[ch++] = 1500 + getInt16(ref bi)/2;
+								channelData[ch++] = 1500 + GetInt16(ref bi)/2;
 							}
 						}
 	
@@ -163,7 +163,8 @@ namespace vJoySerialFeeder
 				// if timeout occurs we better send another request asap
 				Buffer.Clear();
 				lastSuccessfulRead = 0;
-				throw;
+                System.Diagnostics.Debug.WriteLine("KissReader.ReadChannel(): " + ex.Message);
+                throw;
 			}
 		}
 		
@@ -187,7 +188,7 @@ namespace vJoySerialFeeder
 		/// <returns></returns>
 		public override string Configure(string config)
 		{
-			parseConfig(config);
+			ParseConfig(config);
 			using(var d = new KissSetupForm(updateRate)) {
 				d.ShowDialog();
 				if(d.DialogResult == DialogResult.OK) {
@@ -203,7 +204,7 @@ namespace vJoySerialFeeder
 		/// </summary>
 		/// <param name="config"></param>
 		/// <returns></returns>
-		private void parseConfig(string config) {
+		private void ParseConfig(string config) {
 			try {
 				updateRate = int.Parse(config);
 			}
@@ -216,7 +217,7 @@ namespace vJoySerialFeeder
 			return updateRate.ToString();
 		}
 		
-		private short getInt16(ref int index) {
+		private short GetInt16(ref int index) {
 			return (short)((Buffer[index++] << 8) | Buffer[index++]);
 		}
 	}

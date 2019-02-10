@@ -104,7 +104,7 @@ namespace vJoySerialFeeder
 				
 				// execute code
 				script.DoString(scriptSource, null, "Script");
-				script.Options.DebugPrint = print;
+				script.Options.DebugPrint = Print;
 				
 				// save update function
 				update = script.Globals.Get("update").Function;
@@ -112,7 +112,8 @@ namespace vJoySerialFeeder
 				initted = true;
 			}
 			catch(InterpreterException ex) {
-				throw;
+                System.Diagnostics.Debug.WriteLine(message: "Lua.Init(): " + ex.Message);
+                throw;
 			}
 		}
 		
@@ -127,7 +128,8 @@ namespace vJoySerialFeeder
 					update.Call();
 				}
 				catch(InterpreterException ex) {
-					update = null;
+                    System.Diagnostics.Debug.WriteLine("Lua.Update(): " + ex.Message);
+                    update = null;
 					throw;
 				}
 			}
@@ -137,7 +139,7 @@ namespace vJoySerialFeeder
 			return MainForm.Instance.MappingAt(index - 1);
 		}
 		
-		private void print(string s) {
+		private void Print(string s) {
 			LuaOutputForm.Write(s + "\n");
 		}
 	}

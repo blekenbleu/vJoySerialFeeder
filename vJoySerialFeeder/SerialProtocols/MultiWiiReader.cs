@@ -39,7 +39,7 @@ namespace vJoySerialFeeder
 		
 		public override void Start()
 		{
-			parseConfig(config);
+			ParseConfig(config);
 			
 			serialPort.ReadTimeout = 500;
 			serialPort.WriteTimeout = 500;
@@ -117,7 +117,8 @@ namespace vJoySerialFeeder
 				// if timeout occurs we better send another request asap
 				Buffer.Clear();
 				lastSuccessfulRead = 0;
-				throw;
+                System.Diagnostics.Debug.WriteLine("MultiWiiReader.ReadChannels() timeout: " + ex.Message);
+                throw;
 			}
 		}
 		
@@ -141,7 +142,7 @@ namespace vJoySerialFeeder
 		/// <returns></returns>
 		public override string Configure(string config)
 		{
-			parseConfig(config);
+			ParseConfig(config);
 			using(var d = new MultiWiiSetupForm(updateRate)) {
 				d.ShowDialog();
 				if(d.DialogResult == DialogResult.OK) {
@@ -157,7 +158,7 @@ namespace vJoySerialFeeder
 		/// </summary>
 		/// <param name="config"></param>
 		/// <returns></returns>
-		private void parseConfig(string config) {
+		private void ParseConfig(string config) {
 			try {
 				updateRate = int.Parse(config);
 			}
