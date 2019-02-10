@@ -119,8 +119,22 @@ namespace vJoySerialFeeder
 		private ComboBox joystickAxisDropdown;
 		private Label inputLabel;
 		private PictureBox progressBox;
-		
-		protected override float Transform(int val)
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                // dispose managed resources
+                panel.Dispose();
+                channelSpinner.Dispose();
+                joystickAxisDropdown.Dispose();
+                inputLabel.Dispose();
+                progressBox.Dispose();
+            }
+            // free native resources
+        }
+
+        protected override float Transform(int val)
 		{
 			return Parameters.Transform(val);
 		}

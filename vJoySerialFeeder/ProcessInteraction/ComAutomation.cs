@@ -18,7 +18,7 @@ namespace vJoySerialFeeder
 	/// Implements COM OLE Automation
 	/// </summary>
 	/// 
-	public class ComAutomation
+	public class ComAutomation : IDisposable
 	{
 		const string PROGID = "vJoySerialFeeder.1";
 		const string CLSID = "abc3f69e-8a95-4f6c-975a-0a99338c2433";
@@ -219,7 +219,7 @@ namespace vJoySerialFeeder
 					if(++numFails == 5)
 						// too many consecutive errors,
 						// this handler will be removed
-						throw e;
+						throw;
 				}
 				
 			}
@@ -389,5 +389,44 @@ namespace vJoySerialFeeder
 				dispatchLoopWait.Reset();
 			}
 		}
-	}
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                    if (dispatchLoopWait != null)
+                    {
+                        dispatchLoopWait.Dispose();
+                    }
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~ComAutomation() {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
+        }
+        #endregion
+    }
 }

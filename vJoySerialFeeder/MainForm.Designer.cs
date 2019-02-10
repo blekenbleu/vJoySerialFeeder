@@ -6,7 +6,9 @@
  */
 namespace vJoySerialFeeder
 {
-	partial class MainForm
+    // MainForm class is MainForm.cs, MainForm.Designer.cs, MainFormWorker.MainFormWorker.cs
+    // but all Dispose is here
+    partial class MainForm
 	{
 		/// <summary>
 		/// Designer variable used to keep track of non-visual components.
@@ -41,10 +43,19 @@ namespace vJoySerialFeeder
 				if (components != null) {
 					components.Dispose();
 				}
-			}
+                if (this.readerReadyToRead != null)
+                {
+                    this.readerReadyToRead.Dispose();
+                }
+                if (this.readerResultReady != null)
+                {
+                    this.readerResultReady.Dispose();
+                }
+
+            }
 			base.Dispose(disposing);
 		}
-		
+        
 		/// <summary>
 		/// This method is required for Windows Forms designer support.
 		/// Do not change the method contents inside the source code editor. The Forms designer might

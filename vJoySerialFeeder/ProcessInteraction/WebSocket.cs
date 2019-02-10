@@ -129,35 +129,50 @@ namespace vJoySerialFeeder
 		/// <param name="sock"></param>
 		bool negotiate(Socket sock) {
 			string sec = null;
-        	
-        	using(var ns = new NetworkStream(sock))
-        	using(var tr = new StreamReader(ns))
-        	using(var tw = new StreamWriter(ns)) {
-        		string s;
-        		while( !(s = tr.ReadLine()).Equals(string.Empty) ) {
-					// read HTTP headers
-        			var header = s.Split(HEADER_SEP, 2);
-        			if(header[0].ToLower().Equals("sec-websocket-key"))
-        			   sec = header[1].Trim();
-        		}
-        		
-        		if(sec != null) {
-        			sec += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";	
-        			sec = Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(sec)));
-        		
-        			tw.Write("HTTP/1.1 101 Switching Protocols\r\n");
-    				tw.Write("Upgrade: websocket\r\n");
-    				tw.Write("Connection: Upgrade\r\n");
-    				tw.Write("Sec-WebSocket-Accept: " + sec + "\r\n");
-    				tw.Write("\r\n");
-    				
-    				return true;
-        		}
-        		
-    			// invalid WebSocket request
-    			sock.Close();
-    			return false;
-        	}
+            bool ok = false;
+            NetworkStream ns = null;
+            StreamReader tr = null;
+
+            try
+            {
+                ns = new NetworkStream(sock);
+                tr = new StreamReader(ns);
+                using (var tw = new StreamWriter(ns))
+                {
+                    string s;
+                    while (!(s = tr.ReadLine()).Equals(string.Empty))
+                    {
+                        // read HTTP headers
+                        var header = s.Split(HEADER_SEP, 2);
+                        if (header[0].ToLower().Equals("sec-websocket-key"))
+                            sec = header[1].Trim();
+                    }
+
+                    if (sec != null)
+                    {
+                        sec += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+                        sec = Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(sec)));
+
+                        tw.Write("HTTP/1.1 101 Switching Protocols\r\n");
+                        tw.Write("Upgrade: websocket\r\n");
+                        tw.Write("Connection: Upgrade\r\n");
+                        tw.Write("Sec-WebSocket-Accept: " + sec + "\r\n");
+                        tw.Write("\r\n");
+
+                        ok = true;
+                    }
+                    else    // invalid WebSocket request
+                        sock.Close();
+                }
+            }
+            finally
+            {
+                if (ns != null)
+                    ns.Dispose();
+                if (tr != null)
+                    tr.Dispose();
+            }
+            return ok;
 		}
 		
 		/// <summary>
@@ -232,7 +247,7 @@ namespace vJoySerialFeeder
 							throw new Exception("Closing connection - WebSocket has been disabled");
 					}
 					else
-						throw ex;
+						throw;
 				}
         	}
 		}
