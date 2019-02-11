@@ -13,7 +13,7 @@ namespace vJoySerialFeeder
 	/// <summary>
 	/// Description of SerialReader.
 	/// </summary>
-	public abstract class SerialReader
+	public abstract class SerialReader : IDisposable
 	{
 		/// <summary>
 		/// Is the serial protocol supports its own Failsafe signalling it may
@@ -217,7 +217,7 @@ namespace vJoySerialFeeder
                 // first try to open with safe baudrate
                 serialPort = new SerialPort(port, 9600, sp.Parity, sp.DataBits, sp.StopBits);
                 serialPort.Open();
-                // it worked, no try to set the custom baud rate
+                // it worked, now try to set the custom baud rate
                 if (!SetLinuxCustomBaudRate(port, sp.BaudRate))
                 {
                     serialPort.Close();
@@ -250,6 +250,7 @@ namespace vJoySerialFeeder
 
         internal static class NativeMethods
         {
+#pragma warning disable IDE1006
             [DllImport("libc")]
             internal static extern int open([MarshalAs(UnmanagedType.LPStr)]string path, uint flag);
 
@@ -258,6 +259,7 @@ namespace vJoySerialFeeder
 
             [DllImport("libc")]
             internal static extern int ioctl(int handle, uint request, ref Linux.Termios2 termios2);
+#pragma warning restore IDE1006
         }
 
         bool SetLinuxCustomBaudRate(string port, int baud) {
@@ -291,5 +293,42 @@ namespace vJoySerialFeeder
                 NativeMethods.close(fd);
             }
         }
-	}
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                    if (serialPort != null)
+                        ((IDisposable)serialPort).Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
+        }
+
+        // override a finalizer
+        ~SerialReader() {
+           // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+           Dispose(false);
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // finalizer is overridden above.
+            GC.SuppressFinalize(this);
+        }
+        #endregion
+    }	//  class SerialReader
 }
