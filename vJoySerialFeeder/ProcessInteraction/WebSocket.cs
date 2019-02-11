@@ -12,6 +12,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
+using System.Diagnostics.CodeAnalysis; // CA2202
 
 namespace vJoySerialFeeder
 {
@@ -74,7 +75,7 @@ namespace vJoySerialFeeder
 
 		
 		TcpListener listener;
-        readonly byte[] sendBuf = new byte[256];
+        static readonly object _locker = new object();
 		Dictionary<Socket, List<Subscription>> subscriptions = new Dictionary<Socket, List<WebSocket.Subscription>>();
 		List<Socket> deadSockets = new List<Socket>();
 		bool started;
@@ -122,12 +123,13 @@ namespace vJoySerialFeeder
 			}
 			
 		}
-		
-		/// <summary>
-		/// Perform minimal WebSocket negotiation
-		/// </summary>
-		/// <param name="sock"></param>
-		bool Negotiate(Socket sock) {
+
+        /// <summary>
+        /// Perform minimal WebSocket negotiation
+        /// </summary>
+        /// <param name="sock"></param>
+        [SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times")]
+        bool Negotiate(Socket sock) {
 			string sec = null;
             bool ok = false;
             NetworkStream ns = null;
@@ -135,38 +137,47 @@ namespace vJoySerialFeeder
             try
             {
                 ns = new NetworkStream(sock);
-
-                using (var tr = new StreamReader(ns))
+                try
                 {
-                    string s;
-                    while (!(s = tr.ReadLine()).Equals(string.Empty))
+
+                    using (var tr = new StreamReader(ns))
                     {
-                        // read HTTP headers
-                        var header = s.Split(HEADER_SEP, 2);
-                        if (header[0].ToLower().Equals("sec-websocket-key"))
-                            sec = header[1].Trim();
-                    }
+                        string s;
+                        while (!(s = tr.ReadLine()).Equals(string.Empty))
+                        {
+                            // read HTTP headers
+                            var header = s.Split(HEADER_SEP, 2);
+                            if (header[0].ToLower().Equals("sec-websocket-key"))
+                                sec = header[1].Trim();
+                        }
+
+                        if (sec == null)
+                        {
+                            sock.Close();
+                        }
+                        else    // valid WebSocket request
+                        {
+                            sec += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+                            sec = Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(sec)));
+
+                            using (var tw = new StreamWriter(ns))
+                            {
+                                tw.Write("HTTP/1.1 101 Switching Protocols\r\n");
+                                tw.Write("Upgrade: websocket\r\n");
+                                tw.Write("Connection: Upgrade\r\n");
+                                tw.Write("Sec-WebSocket-Accept: " + sec + "\r\n");
+                                tw.Write("\r\n");
+                                tw.Flush();
+                            }
+
+                            ok = true;
+                        }
+                    }   // To avoid CA2202 here probably requires overriding StreamWriter.Dispose
                 }
-
-                if (sec != null)
-                { 
-                    sec += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-                    sec = Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(sec)));
-
-                    using (var tw = new StreamWriter(ns))
-                    {
-                        tw.Write("HTTP/1.1 101 Switching Protocols\r\n");
-                        tw.Write("Upgrade: websocket\r\n");
-                        tw.Write("Connection: Upgrade\r\n");
-                        tw.Write("Sec-WebSocket-Accept: " + sec + "\r\n");
-                        tw.Write("\r\n");
-                        tw.Flush();
-                    }
-
-                    ok = true;
+                finally
+                {
+                    ns = null;
                 }
-                else    // invalid WebSocket request
-                    sock.Close();
             }
             finally
             {
@@ -440,9 +451,11 @@ namespace vJoySerialFeeder
 			            +",\"output\":"+m.Output.ToString(CultureInfo.InvariantCulture)+"}");
 		}
 		
-		void SendMessage(Socket sock, string msg) {;
-			lock(sendBuf) {
-				var slen = Encoding.UTF8.GetBytes(msg, 0, msg.Length, sendBuf, 2);
+		void SendMessage(Socket sock, string msg) {
+            byte[] sendBuf = new byte[256];
+
+            lock (_locker) {
+                var slen = Encoding.UTF8.GetBytes(msg, 0, msg.Length, sendBuf, 2);
 				sendBuf[0] = 0x81;
 				sendBuf[1] = (byte)slen;
 				sock.Send(sendBuf, slen+2, SocketFlags.None);

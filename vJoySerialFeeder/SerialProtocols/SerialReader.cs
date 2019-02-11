@@ -251,7 +251,9 @@ namespace vJoySerialFeeder
         internal static class NativeMethods
         {
 #pragma warning disable IDE1006
-            [DllImport("libc")]
+            [DllImport("libc", CharSet = CharSet.Ansi,
+               BestFitMapping = false,
+               ThrowOnUnmappableChar = true)]
             internal static extern int open([MarshalAs(UnmanagedType.LPStr)]string path, uint flag);
 
             [DllImport("libc")]
